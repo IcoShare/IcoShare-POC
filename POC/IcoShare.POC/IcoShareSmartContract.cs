@@ -7,7 +7,8 @@ namespace IcoShare.POC
 {
     public class IcoShareSmartContract : SmartContract
     {
-        public static readonly byte[] Owner = "111".AsByteArray();
+        public static readonly byte[] Owner = "AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y".ToScriptHash();
+        private static readonly byte[] NeoAssetId = { 155, 124, 255, 218, 166, 116, 190, 174, 15, 147, 14, 190, 96, 133, 175, 144, 147, 229, 254, 86, 179, 74, 92, 34, 12, 205, 207, 110, 252, 51, 111, 197 };
 
         public static readonly char POSTFIX_A = 'A';
         public static readonly char POSTFIX_STATUS = 'B';
@@ -18,15 +19,16 @@ namespace IcoShare.POC
         public static readonly char POSTFIX_MAXCONT = 'G';
         public static readonly char POSTFIX_CURRENTCONT = 'H'; 
         public static readonly char POSTFIX_CONTRIBUTORS = 'J';
-        public static readonly char POSTFIX_TOKENHASH = 'K';
+        public static readonly char POSTFIX_CONTRIBUTEDSHARES = 'K';
+        public static readonly char POSTFIX_TOKENHASH = 'I';
         
         public static readonly byte[] ACTIVE = { 31, 32 };
         public static readonly byte[] FUNDED = { 32, 33 };
         public static readonly byte[] NOTFUNDED = { 33, 34 };
 
-        public const int IdLenght = 14;
-        public const int SenderAddresLenght = 6; //TODO : Set this to corrent length
-        
+        private const int IdLenght = 14;
+        private const int SenderAddresLenght = 6; //34
+
         //[DisplayName("transfer")]
         public static event Action<byte[]> Funded;
         public static event Action<byte[], BigInteger> Refund;
@@ -34,20 +36,46 @@ namespace IcoShare.POC
         #region Helper 
         private static BigInteger Now()
         {
-            //TODO : 
-            return Runtime.Now;
+            uint now = Blockchain.GetHeader(Blockchain.GetHeight()).Timestamp;
+            now += 15;
+            return now;
         }
         private static byte[] GetSender()
         {
-            return ExecutionEngine.GetSender();
+            Transaction tx = (Transaction)ExecutionEngine.ScriptContainer;
+            TransactionOutput[] reference = tx.GetReferences();
+
+            foreach (TransactionOutput output in reference)
+            {
+                if (output.AssetId.AsString() == NeoAssetId.AsString())
+                    return output.ScriptHash;
+            }
+            return new byte[0];
         }
         private static bool IsOwner()
         {
             return Runtime.CheckWitness(Owner);
         }
+
+        private static byte[] GetReceiver()
+        {
+            return ExecutionEngine.ExecutingScriptHash;
+        }
+
         private static ulong GetContributeValue()
         {
-            return ExecutionEngine.GetContibuteValue();
+            Transaction tx = (Transaction)ExecutionEngine.ScriptContainer;
+            TransactionOutput[] outputs = tx.GetOutputs();
+            ulong value = 0;
+            // get the total amount of Neo
+            foreach (TransactionOutput output in outputs)
+            {
+                if (IsEquel(output.ScriptHash, GetReceiver()) && IsEquel(output.AssetId, NeoAssetId))
+                {
+                    value += (ulong)output.Value;
+                }
+            }
+            return value;
         }
 
         private static byte[] GetFromStorage(byte[] storageKey, char postfix)
@@ -80,22 +108,22 @@ namespace IcoShare.POC
         {
             Storage.Put(Storage.CurrentContext, storageKey, value);
         }
-        private static void PutOnStorage(byte[] storageKey, string value)
-        {
-            PutOnStorage(storageKey, value.AsByteArray());
-        }
         private static void PutOnStorage(byte[] storageKey, char postfix, byte[] value)
         {
             string k = string.Concat(storageKey.AsString(),postfix);
             Storage.Put(Storage.CurrentContext, k.AsByteArray(), value);
         }
-        private static void PutOnStorage(byte[] storageKey, char postfix, string value)
-        {
-            PutOnStorage(storageKey, postfix, value.AsByteArray());
-        }
+        /// <summary>
+        /// Stores one to many relation. storageKey+postfix+value is unique
+        /// </summary>
+        /// <param name="storageKey"></param>
+        /// <param name="postfix"></param>
+        /// <param name="value"></param>
         private static void PutItemOnStorageList(byte[] storageKey, char postfix, byte[] value)
         {
             var item = GetFromStorage(storageKey, postfix).AsString() ?? "";
+
+            if (item.Contains(value.AsString())) return;
 
             if (!string.IsNullOrEmpty(item))
                 item = string.Concat(item, "_");
@@ -126,6 +154,20 @@ namespace IcoShare.POC
 
             return temp.AsByteArray();
         }
+        private static bool IsEquel(byte[] value1, byte[] value2)
+        {
+            return value1.AsString() == value2.AsString();
+        }
+
+        private static void RefundContributedValue()
+        {
+            byte[] sender = GetSender();
+            ulong contribute_value = GetContributeValue();
+            if (contribute_value > 0 && sender.Length != 0)
+            {
+                OnRefund(sender, contribute_value);
+            }
+        }
         #endregion
 
         #region Private
@@ -139,48 +181,18 @@ namespace IcoShare.POC
             if (Funded != null) Funded(icoShareId);
             Runtime.Notify("FUNDED".AsByteArray(), icoShareId);
         }
+        
         #endregion
 
         public static Object Main(string operation, params object[] args)
         {
-            if (Runtime.Trigger == TriggerType.Verification)
-            {
-                if (Owner.Length == 20)
-                {
-                    // if param Owner is script hash
-                    return Runtime.CheckWitness(Owner);
-                }
-                else if (Owner.Length == 33)
-                {
-                    // if param Owner is public key
-                    byte[] signature = operation.AsByteArray();
-                    return VerifySignature(signature, Owner);
-                }
-            }
-            else if (Runtime.Trigger == TriggerType.Application)
-            {
-                //if (operation == "deploy") return Deploy();
-                //if (operation == "mintTokens") return MintTokens();
-                //if (operation == "totalSupply") return TotalSupply();
-                //if (operation == "name") return Name();
-                //if (operation == "symbol") return Symbol();
-                //if (operation == "transfer")
-                //{
-                //    if (args.Length != 3) return false;
-                //    byte[] from = (byte[])args[0];
-                //    byte[] to = (byte[])args[1];
-                //    BigInteger value = (BigInteger)args[2];
-                //    return Transfer(from, to, value);
-                //}
-            }
+            if (operation == "StartNewIcoShare") return StartNewIcoShare(
+                (byte[])args[0], (byte[])args[1], 
+                (BigInteger)args[2], (BigInteger)args[3],
+                (BigInteger)args[4], (BigInteger)args[5], (BigInteger)args[6]);
 
-            //you can choice refund or not refund
-            byte[] sender = GetSender();
-            ulong contribute_value = GetContributeValue();
-            if (contribute_value > 0 && sender.Length != 0)
-            {
-                OnRefund(sender, contribute_value);
-            }
+            //Not supported opetation, refund 
+            RefundContributedValue();
             return false;
         }
 
@@ -192,7 +204,8 @@ namespace IcoShare.POC
             BigInteger contributionBundle, BigInteger minContribution, BigInteger maxContribution)
         {
             //Check parameters
-            if (icoShareId.Length != IdLenght || startTime < Now() || endTime < startTime) return false;
+            if (icoShareId.Length != IdLenght || startTime < Now() || endTime < startTime)
+                return false;
 
             //Check if id already used
             var existingId = GetFromStorage(icoShareId);
@@ -224,20 +237,22 @@ namespace IcoShare.POC
             byte[] sender = GetSender();
 
             //Contribute asset is not neo
-            if (sender.Length == 0) return false;
+            if (sender.Length == 0)
+                return false;
 
             //Get contribution value
             BigInteger contributeValue = GetContributeValue();
+            if (contributeValue == 0) return false;
 
             //Check if IcoShare funded
             var isIcoShareFunded = GetFromStorage(icoShareId, POSTFIX_STATUS);
-            if (isIcoShareFunded.AsString() != ACTIVE.AsString())
+            if (!IsEquel(isIcoShareFunded,ACTIVE))
             {
                 OnRefund(sender, contributeValue);
                 return false;
             }
 
-            //Check enddata
+            //Check enddate
             BigInteger endDate = GetFromStorage(icoShareId, POSTFIX_ENDDATE).AsBigInteger();
             if (endDate < Now())
             {
@@ -250,7 +265,7 @@ namespace IcoShare.POC
             BigInteger icoShareBundle = GetFromStorage(icoShareId, POSTFIX_BUNDLE).AsBigInteger();
             BigInteger icoShareMax = GetFromStorage(icoShareId, POSTFIX_MAXCONT).AsBigInteger();
             BigInteger sendersCurrentCont = GetFromStorage(MultiKey(icoShareId, sender)).AsBigInteger();
-
+            
             //Decide to the contribution
             BigInteger contribution = 0;
 
@@ -282,6 +297,8 @@ namespace IcoShare.POC
                 OnRefund(sender, refund);
 
                 contribution = calc;
+
+                if (contribution == 0) return false;
             }
 
             //Add/Update user's current contribution
@@ -297,6 +314,9 @@ namespace IcoShare.POC
 
                 //Add to icoshare's contributors
                 PutItemOnStorageList(icoShareId, POSTFIX_CONTRIBUTORS, sender);
+
+                //Add to contributor's icoShare list
+                PutItemOnStorageList(sender, POSTFIX_CONTRIBUTEDSHARES, icoShareId);
             }
             
             //Update IcoShare's current value

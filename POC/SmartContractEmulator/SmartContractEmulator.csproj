@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Blockchain.cs" />
     <Compile Include="ExecutionEngine.cs" />
     <Compile Include="Extension.cs" />
     <Compile Include="Helper.cs" />
@@ -48,6 +49,8 @@
     <Compile Include="Runtime.cs" />
     <Compile Include="SmartContract.cs" />
     <Compile Include="Storage.cs" />
+    <Compile Include="Transaction.cs" />
+    <Compile Include="TransactionOutput.cs" />
     <Compile Include="TriggerType.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

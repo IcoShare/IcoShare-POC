@@ -1,0 +1,36 @@
+﻿IcoShareId,
+
+[ContributorScriptHash]_ICOSHARELIST		IcoShareId List
+AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y			e9eed8dc39332032dc22e5d6e86332c50327ba23-032dc22e5d6e86332c50327ba23e9eed8dc39332
+AavTwrJu7saKcrP11unPnFWj6GU1uqkQ1Q			e9eed8dc39332032dc22e5d6e86332c50327ba23
+
+[IcoShareId]_CONTRIBUTORLIST				ContributorScriptHash List
+e9eed8dc39332032dc22e5d6e86332c50327ba23	AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y-AavTwrJu7saKcrP11unPnFWj6GU1uqkQ1Q
+032dc22e5d6e86332c50327ba23e9eed8dc39332	AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y
+
+[ICOSHAREID]_STATUS							Status
+e9eed8dc39332032dc22e5d6e86332c50327ba23	ACTIVE
+032dc22e5d6e86332c50327ba23e9eed8dc39332	FUNDED
+032dc22e5d6e86332c50327ba23e9eed8dc39332	REFUND
+
+
+ContributorScriptHash -> IcoShareId List
+IcoShareId List[0] -> IcoShareId Status 
+
+
+
+PSUDO CODE
+
+IcoShareIdList = getIcoShareIdList(ContributorScriptHash)
+
+foreach (icoShareId in IcoShareIdList)
+{
+	status = getIcoShareStatus(icoShareId)
+	if(status == REFUND)
+	{
+	//REFUND
+	}
+}
+
+getIcoShareIdList(AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y) -> e9eed8dc39332032dc22e5d6e86332c50327ba23-032dc22e5d6e86332c50327ba23e9eed8dc39332
+

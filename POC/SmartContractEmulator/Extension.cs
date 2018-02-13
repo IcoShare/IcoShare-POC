@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
 
 namespace SmartContractEmulator
 {
@@ -25,6 +26,17 @@ namespace SmartContractEmulator
             return System.Text.Encoding.ASCII.GetBytes(number.ToString());
         }
 
+        public static byte[] ToScriptHash(this string hexString)
+        {
+            return hexString.AsByteArray();
+            //hexString = hexString.Trim();
+            //byte[] returnBytes = new byte[hexString.Length / 2];
+            //for (int i = 0; i < returnBytes.Length; i++)
+            //{
+            //    returnBytes[i] = Convert.ToByte(hexString.Substring(i * 2, 2), 16);
+            //}
+            //return returnBytes;
+        }
     }
 
 }
