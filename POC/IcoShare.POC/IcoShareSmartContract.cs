@@ -7,29 +7,28 @@ namespace IcoShare.POC
 {
     public class IcoShareSmartContract : SmartContract
     {
-        public static readonly byte[] Owner = "AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y".ToScriptHash();
+        #region Private fields
+        private static readonly byte[] Owner = "AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y".ToScriptHash();
         private static readonly byte[] NeoAssetId = { 155, 124, 255, 218, 166, 116, 190, 174, 15, 147, 14, 190, 96, 133, 175, 144, 147, 229, 254, 86, 179, 74, 92, 34, 12, 205, 207, 110, 252, 51, 111, 197 };
-        
+
         public static readonly char POSTFIX_STATUS = 'A';
         public static readonly char POSTFIX_STARTDATE = 'B';
         public static readonly char POSTFIX_ENDDATE = 'C';
         public static readonly char POSTFIX_BUNDLE = 'D';
         public static readonly char POSTFIX_MINCONT = 'E';
         public static readonly char POSTFIX_MAXCONT = 'F';
-        public static readonly char POSTFIX_CURRENTCONT = 'G'; 
+        public static readonly char POSTFIX_CURRENTCONT = 'G';
         public static readonly char POSTFIX_CONTRIBUTORS = 'H';
         public static readonly char POSTFIX_CONTRIBUTEDSHARES = 'I';
         public static readonly char POSTFIX_TOKENHASH = 'J';
-        
+
         public static readonly byte[] ACTIVE = { 31, 32 };
         public static readonly byte[] FUNDED = { 32, 33 };
         public static readonly byte[] NOTFUNDED = { 33, 34 };
 
         private const int IcoShareIdLenght = 36;
         private const int SenderAddresLenght = 34;
-        
-        public static event Action<byte[]> Funded;
-        public static event Action<byte[], BigInteger> Refund;
+        #endregion
 
         #region Helper 
         private static BigInteger Now()
@@ -54,12 +53,10 @@ namespace IcoShare.POC
         {
             return Runtime.CheckWitness(Owner);
         }
-
         private static byte[] GetReceiver()
         {
             return ExecutionEngine.ExecutingScriptHash;
         }
-
         private static ulong GetContributeValue()
         {
             Transaction tx = (Transaction)ExecutionEngine.ScriptContainer;
@@ -76,16 +73,16 @@ namespace IcoShare.POC
             return value;
         }
 
+        //Storage related
         private static byte[] GetFromStorage(byte[] storageKey, char postfix)
         {
-            string k =  storageKey.AsString() + postfix;
+            string k = storageKey.AsString() + postfix;
             return Storage.Get(Storage.CurrentContext, k.AsByteArray());
         }
         private static byte[] GetFromStorage(byte[] storageKey)
         {
             return Storage.Get(Storage.CurrentContext, storageKey);
         }
-
 
         private static byte[][] GetListFromStorage(byte[] storageKey, char postfix, int listItemSize)
         {
@@ -100,26 +97,42 @@ namespace IcoShare.POC
             var list = storageItem.AsString();
 
             listItemSize = listItemSize + 1; //for seperator
-            var len = (list.Length + 1 ) / listItemSize;
+            var len = (list.Length + 1) / listItemSize;
 
             byte[][] liste = new byte[len][];
 
-            for (int i = 0; i < len;i++)
+            for (int i = 0; i < len; i++)
             {
-                liste[i] = list.Substring(i * listItemSize, listItemSize - 1 ).AsByteArray();
+                liste[i] = list.Substring(i * listItemSize, listItemSize - 1).AsByteArray();
             }
 
             return liste;
         }
 
+        private static void PutOnStorage(byte[] storageKey, BigInteger value)
+        {
+            Runtime.Notify(storageKey, value + 0);
+            Storage.Put(Storage.CurrentContext, storageKey, value);
+        }
         private static void PutOnStorage(byte[] storageKey, byte[] value)
         {
+            Runtime.Notify(storageKey, value);
             Storage.Put(Storage.CurrentContext, storageKey, value);
+        }
+
+        private static void PutOnStorage(byte[] storageKey, char postfix, BigInteger value)
+        {
+            string k = string.Concat(storageKey.AsString(), postfix);
+            Storage.Put(Storage.CurrentContext, k.AsByteArray(), value);
+
+            Runtime.Notify(k, value + 0);
         }
         private static void PutOnStorage(byte[] storageKey, char postfix, byte[] value)
         {
-            string k = string.Concat(storageKey.AsString(),postfix);
+            string k = string.Concat(storageKey.AsString(), postfix);
             Storage.Put(Storage.CurrentContext, k.AsByteArray(), value);
+
+            Runtime.Notify(k, value);
         }
         /// <summary>
         /// Stores one to many relation. storageKey+postfix+value is unique
@@ -130,7 +143,7 @@ namespace IcoShare.POC
         private static void PutItemOnStorageList(byte[] storageKey, char postfix, byte[] value, int listItemSize)
         {
             var list = GetListFromStorage(storageKey, postfix, listItemSize);
-            
+
             //Check if value is already exist
             if (list != null)
                 for (int i = 0; i < list.Length; i++)
@@ -139,7 +152,7 @@ namespace IcoShare.POC
             //Update list string
             var item = GetFromStorage(storageKey, postfix).AsString() ?? "";
 
-            if (item== "" || item == null)
+            if (item != null && item != "")
                 item = string.Concat(item, "_");
 
             item = string.Concat(item, value.AsString());
@@ -185,9 +198,13 @@ namespace IcoShare.POC
         #endregion
 
         #region Events
+
+        public static event Action<byte[]> Funded;
+        public static event Action<byte[], BigInteger> Refund;
+
         private static void OnRefund(byte[] address, BigInteger amount)
         {
-            if(Refund != null) Refund(address, amount);
+            if (Refund != null) Refund(address, amount);
             Runtime.Notify("REFUND".AsByteArray(), address, amount.AsByteArray());
         }
         private static void OnFunded(byte[] icoShareId)
@@ -200,7 +217,7 @@ namespace IcoShare.POC
         public static Object Main(string operation, params object[] args)
         {
             if (operation == "StartNewIcoShare") return StartNewIcoShare(
-                (byte[])args[0], (byte[])args[1], 
+                (byte[])args[0], (byte[])args[1],
                 (BigInteger)args[2], (BigInteger)args[3],
                 (BigInteger)args[4], (BigInteger)args[5], (BigInteger)args[6]);
 
@@ -209,7 +226,6 @@ namespace IcoShare.POC
             return false;
         }
 
-
         //START NEW ICO
         public static bool StartNewIcoShare(
             byte[] icoShareId, byte[] tokenScriptHash,
@@ -217,8 +233,7 @@ namespace IcoShare.POC
             BigInteger contributionBundle, BigInteger minContribution, BigInteger maxContribution)
         {
             //Check parameters
-            if (icoShareId.Length != IcoShareIdLenght || startTime < Now() || endTime < startTime)
-                return false;
+            if (icoShareId.Length != IcoShareIdLenght || endTime < Now() || endTime < startTime) return false;
 
             //Check if id already used
             var existingId = GetFromStorage(icoShareId);
@@ -227,12 +242,12 @@ namespace IcoShare.POC
             //Set Ico Share Info
             PutOnStorage(icoShareId, POSTFIX_STATUS, ACTIVE);
             PutOnStorage(icoShareId, POSTFIX_TOKENHASH, tokenScriptHash);
-            PutOnStorage(icoShareId, POSTFIX_STARTDATE, startTime.AsByteArray());
-            PutOnStorage(icoShareId, POSTFIX_ENDDATE, endTime.AsByteArray());
-            PutOnStorage(icoShareId, POSTFIX_BUNDLE, contributionBundle.AsByteArray());
-            PutOnStorage(icoShareId, POSTFIX_MINCONT, minContribution.AsByteArray());
-            PutOnStorage(icoShareId, POSTFIX_MAXCONT, maxContribution.AsByteArray());
-            PutOnStorage(icoShareId, POSTFIX_CURRENTCONT, ((BigInteger)0).AsByteArray());
+            PutOnStorage(icoShareId, POSTFIX_STARTDATE, startTime);
+            PutOnStorage(icoShareId, POSTFIX_ENDDATE, endTime);
+            PutOnStorage(icoShareId, POSTFIX_BUNDLE, contributionBundle);
+            PutOnStorage(icoShareId, POSTFIX_MINCONT, minContribution);
+            PutOnStorage(icoShareId, POSTFIX_MAXCONT, maxContribution);
+            PutOnStorage(icoShareId, POSTFIX_CURRENTCONT, 0);
 
             return true;
         }

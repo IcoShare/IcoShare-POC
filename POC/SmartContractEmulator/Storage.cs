@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Numerics;
 
 namespace SmartContractEmulator
 {
@@ -8,6 +9,11 @@ namespace SmartContractEmulator
         public static StorageContext CurrentContext { get; }
 
         public static Dictionary<string, string> MemoryStorage = new Dictionary<string, string>() { };
+
+        public static void Put(StorageContext context, byte[] key, BigInteger value)
+        {
+            Put(context, key, value.AsByteArray());
+        }
 
         public static void Put(StorageContext context, byte[] key, byte[] value)
         {

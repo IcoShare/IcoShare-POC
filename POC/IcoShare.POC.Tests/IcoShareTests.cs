@@ -21,7 +21,7 @@ namespace IcoShare.POC.Tests
         }
 
         private byte[] StartNewIcoShare(
-            string scriptHash = "AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y", 
+            string scriptHash = "5d7d82d4ebf8a24a3fcbc2f228c37687d474d0a6", 
             string icoShare = "bdf067b8-1908-45e7-84ea-4412a3603e79")
         {
             byte[] tokenScriptHash = scriptHash.AsByteArray();
@@ -103,10 +103,10 @@ namespace IcoShare.POC.Tests
             byte[] icoShareId = StartNewIcoShare();
 
             IcoShareSmartContract.SendContribution(icoShareId);
-            Assert.AreEqual(Storage.MemoryStorage[icoShareId.AsString() + "_" + ExecutionEngine.Sender.AsString()], "50");
+            Assert.AreEqual("50", Storage.MemoryStorage[icoShareId.AsString() + "_" + ExecutionEngine.Sender.AsString()]);
             
             IcoShareSmartContract.SendContribution(icoShareId);
-            Assert.AreEqual(Storage.MemoryStorage[icoShareId.AsString() + "_" + ExecutionEngine.Sender.AsString()], "100");
+            Assert.AreEqual("100", Storage.MemoryStorage[icoShareId.AsString() + "_" + ExecutionEngine.Sender.AsString()]);
         }
 
         [TestMethod]
@@ -114,15 +114,17 @@ namespace IcoShare.POC.Tests
         {
             byte[] icoShareId = StartNewIcoShare();
 
-            ExecutionEngine.Sender = "123123".AsByteArray();            
-            IcoShareSmartContract.SendContribution(icoShareId);
+            ExecutionEngine.Sender = "123123".AsByteArray();
+            ExecutionEngine.ConributedNeoValue = 20;
+            Assert.IsTrue(IcoShareSmartContract.SendContribution(icoShareId));
 
-            Assert.AreEqual(Storage.MemoryStorage[icoShareId.AsString() + IcoShareSmartContract.POSTFIX_CONTRIBUTORS], "123123");
+            Assert.AreEqual("123123", Storage.MemoryStorage[icoShareId.AsString() + IcoShareSmartContract.POSTFIX_CONTRIBUTORS]);
             
             ExecutionEngine.Sender = "987654".AsByteArray();
-            IcoShareSmartContract.SendContribution(icoShareId);
+            ExecutionEngine.ConributedNeoValue = 30;
+            Assert.IsTrue(IcoShareSmartContract.SendContribution(icoShareId));
 
-            Assert.AreEqual(Storage.MemoryStorage[icoShareId.AsString() + IcoShareSmartContract.POSTFIX_CONTRIBUTORS], "123123_987654");
+            Assert.AreEqual("123123_987654", Storage.MemoryStorage[icoShareId.AsString() + IcoShareSmartContract.POSTFIX_CONTRIBUTORS]);
         }
 
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Numerics;
 
 namespace SmartContractEmulator
 {
@@ -32,6 +33,18 @@ namespace SmartContractEmulator
 
             Notified?.Invoke(messages);
         }
-    }
 
+        public static void Notify(byte[] message, BigInteger value)
+        {
+            Notify(message, value.AsByteArray());
+        }
+        public static void Notify(string message, BigInteger value)
+        {
+            Notify(message.AsByteArray(), value.AsByteArray());
+        }
+        public static void Notify(string message, byte[] message2)
+        {
+            Notify(message.AsByteArray(), message2);
+        }
+    }
 }
