@@ -25,10 +25,9 @@ namespace IcoShare.POC
         public static readonly byte[] FUNDED = { 32, 33 };
         public static readonly byte[] NOTFUNDED = { 33, 34 };
 
-        private const int IdLenght = 36;
+        private const int IcoShareIdLenght = 36;
         private const int SenderAddresLenght = 34;
-
-        //[DisplayName("transfer")]
+        
         public static event Action<byte[]> Funded;
         public static event Action<byte[], BigInteger> Refund;
 
@@ -86,9 +85,19 @@ namespace IcoShare.POC
         {
             return Storage.Get(Storage.CurrentContext, storageKey);
         }
+
+
+        private static byte[][] GetListFromStorage(byte[] storageKey, char postfix, int listItemSize)
+        {
+            byte[] key = (storageKey.AsString() + postfix).AsByteArray();
+            return GetListFromStorage(key, listItemSize);
+        }
         private static byte[][] GetListFromStorage(byte[] storageKey, int listItemSize)
         {
-            string list = GetFromStorage(storageKey).AsString();
+            byte[] storageItem = GetFromStorage(storageKey);
+            if (storageItem == null || storageItem.Length == 0) return null;
+
+            var list = storageItem.AsString();
 
             listItemSize = listItemSize + 1; //for seperator
             var len = (list.Length + 1 ) / listItemSize;
@@ -118,13 +127,19 @@ namespace IcoShare.POC
         /// <param name="storageKey"></param>
         /// <param name="postfix"></param>
         /// <param name="value"></param>
-        private static void PutItemOnStorageList(byte[] storageKey, char postfix, byte[] value)
+        private static void PutItemOnStorageList(byte[] storageKey, char postfix, byte[] value, int listItemSize)
         {
+            var list = GetListFromStorage(storageKey, postfix, listItemSize);
+            
+            //Check if value is already exist
+            if (list != null)
+                for (int i = 0; i < list.Length; i++)
+                    if (IsEquel(list[i], value)) return;
+
+            //Update list string
             var item = GetFromStorage(storageKey, postfix).AsString() ?? "";
 
-            if (item.Contains(value.AsString())) return;
-
-            if (!string.IsNullOrEmpty(item))
+            if (item== "" || item == null)
                 item = string.Concat(item, "_");
 
             item = string.Concat(item, value.AsString());
@@ -169,7 +184,7 @@ namespace IcoShare.POC
         }
         #endregion
 
-        #region Private
+        #region Events
         private static void OnRefund(byte[] address, BigInteger amount)
         {
             if(Refund != null) Refund(address, amount);
@@ -180,7 +195,6 @@ namespace IcoShare.POC
             if (Funded != null) Funded(icoShareId);
             Runtime.Notify("FUNDED".AsByteArray(), icoShareId);
         }
-        
         #endregion
 
         public static Object Main(string operation, params object[] args)
@@ -203,7 +217,7 @@ namespace IcoShare.POC
             BigInteger contributionBundle, BigInteger minContribution, BigInteger maxContribution)
         {
             //Check parameters
-            if (icoShareId.Length != IdLenght || startTime < Now() || endTime < startTime)
+            if (icoShareId.Length != IcoShareIdLenght || startTime < Now() || endTime < startTime)
                 return false;
 
             //Check if id already used
@@ -312,10 +326,10 @@ namespace IcoShare.POC
                 PutOnStorage(MultiKey(icoShareId, sender), contribution.AsByteArray());
 
                 //Add to icoshare's contributors
-                PutItemOnStorageList(icoShareId, POSTFIX_CONTRIBUTORS, sender);
+                PutItemOnStorageList(icoShareId, POSTFIX_CONTRIBUTORS, sender, SenderAddresLenght);
 
                 //Add to contributor's icoShare list
-                PutItemOnStorageList(sender, POSTFIX_CONTRIBUTEDSHARES, icoShareId);
+                PutItemOnStorageList(sender, POSTFIX_CONTRIBUTEDSHARES, icoShareId, IcoShareIdLenght);
             }
             
             //Update IcoShare's current value

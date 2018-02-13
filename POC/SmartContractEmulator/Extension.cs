@@ -5,6 +5,11 @@ namespace SmartContractEmulator
 {
     public static class Extension
     {
+        public static byte[] Concat(this byte[] value1, byte[] value2)
+        {
+            return string.Concat(value1, value2).AsByteArray();
+        }
+
         public static string AsString(this byte[] byteArray)
         {
             if (byteArray == null || byteArray.Length == 0) return null;
