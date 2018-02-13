@@ -9,25 +9,24 @@ namespace IcoShare.POC
     {
         public static readonly byte[] Owner = "AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y".ToScriptHash();
         private static readonly byte[] NeoAssetId = { 155, 124, 255, 218, 166, 116, 190, 174, 15, 147, 14, 190, 96, 133, 175, 144, 147, 229, 254, 86, 179, 74, 92, 34, 12, 205, 207, 110, 252, 51, 111, 197 };
-
-        public static readonly char POSTFIX_A = 'A';
-        public static readonly char POSTFIX_STATUS = 'B';
-        public static readonly char POSTFIX_STARTDATE = 'C';
-        public static readonly char POSTFIX_ENDDATE = 'D';
-        public static readonly char POSTFIX_BUNDLE = 'E';
-        public static readonly char POSTFIX_MINCONT = 'F';
-        public static readonly char POSTFIX_MAXCONT = 'G';
-        public static readonly char POSTFIX_CURRENTCONT = 'H'; 
-        public static readonly char POSTFIX_CONTRIBUTORS = 'J';
-        public static readonly char POSTFIX_CONTRIBUTEDSHARES = 'K';
-        public static readonly char POSTFIX_TOKENHASH = 'I';
+        
+        public static readonly char POSTFIX_STATUS = 'A';
+        public static readonly char POSTFIX_STARTDATE = 'B';
+        public static readonly char POSTFIX_ENDDATE = 'C';
+        public static readonly char POSTFIX_BUNDLE = 'D';
+        public static readonly char POSTFIX_MINCONT = 'E';
+        public static readonly char POSTFIX_MAXCONT = 'F';
+        public static readonly char POSTFIX_CURRENTCONT = 'G'; 
+        public static readonly char POSTFIX_CONTRIBUTORS = 'H';
+        public static readonly char POSTFIX_CONTRIBUTEDSHARES = 'I';
+        public static readonly char POSTFIX_TOKENHASH = 'J';
         
         public static readonly byte[] ACTIVE = { 31, 32 };
         public static readonly byte[] FUNDED = { 32, 33 };
         public static readonly byte[] NOTFUNDED = { 33, 34 };
 
-        private const int IdLenght = 14;
-        private const int SenderAddresLenght = 6; //34
+        private const int IdLenght = 36;
+        private const int SenderAddresLenght = 34;
 
         //[DisplayName("transfer")]
         public static event Action<byte[]> Funded;

@@ -10,6 +10,9 @@ namespace IcoShare.POC.Tests
     [TestClass]
     public class IcoShareTests
     {
+        private string _icoShare1 = "bdf067b8-1908-45e7-84ea-4412a3603e79";
+        private string _icoShare2 = "67b8bdf0-45e7-1908-4412-a3603e7984ea";
+
         [TestInitialize]
         public void TestInit()
         {
@@ -19,7 +22,7 @@ namespace IcoShare.POC.Tests
 
         private byte[] StartNewIcoShare(
             string scriptHash = "AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y", 
-            string icoShare = "12345678912345")
+            string icoShare = "bdf067b8-1908-45e7-84ea-4412a3603e79")
         {
             byte[] tokenScriptHash = scriptHash.AsByteArray();
 
@@ -126,8 +129,8 @@ namespace IcoShare.POC.Tests
         [TestMethod]
         public void SendContribution_AddsToContributedSharesList()
         {
-            byte[] icoShareId1 = StartNewIcoShare("AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y", "12345678912345");
-            byte[] icoShareId2 = StartNewIcoShare("Jr6o664CWJKi1QRXjqeic2zRp8yAK2nJJp", "98765123456789");
+            byte[] icoShareId1 = StartNewIcoShare("AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y", _icoShare1);
+            byte[] icoShareId2 = StartNewIcoShare("Jr6o664CWJKi1QRXjqeic2zRp8yAK2nJJp", _icoShare2);
 
             ExecutionEngine.Sender = "123123".AsByteArray();
             ExecutionEngine.ConributedNeoValue = 10;
@@ -153,7 +156,7 @@ namespace IcoShare.POC.Tests
         [TestMethod]
         public void SendContribution_AddsToContributedSharesListOnlyOnce()
         {
-            byte[] icoShareId1 = StartNewIcoShare("AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y", "12345678912345");
+            byte[] icoShareId1 = StartNewIcoShare("AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y", _icoShare1);
 
             ExecutionEngine.Sender = "123123".AsByteArray();
             ExecutionEngine.ConributedNeoValue = 10;
@@ -168,7 +171,7 @@ namespace IcoShare.POC.Tests
         [TestMethod]
         public void SendContribution_AddsToContributorsListOnlyOnce()
         {
-            byte[] icoShareId1 = StartNewIcoShare("AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y", "12345678912345");
+            byte[] icoShareId1 = StartNewIcoShare("AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y", _icoShare1);
 
             ExecutionEngine.Sender = "123123".AsByteArray();
             ExecutionEngine.ConributedNeoValue = 10;
@@ -183,7 +186,7 @@ namespace IcoShare.POC.Tests
         [TestMethod]
         public void SendContribution_0ContributionReturnsFalse()
         {
-            byte[] icoShareId1 = StartNewIcoShare("AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y", "12345678912345");
+            byte[] icoShareId1 = StartNewIcoShare("AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y", _icoShare1);
 
             ExecutionEngine.Sender = "123123".AsByteArray();
             ExecutionEngine.ConributedNeoValue = 0;
@@ -279,24 +282,24 @@ namespace IcoShare.POC.Tests
 
             byte[] icoShareId = StartNewIcoShare();
 
-            ExecutionEngine.Sender = "123123".AsByteArray();
+            ExecutionEngine.Sender = "AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y".AsByteArray();
             ExecutionEngine.ConributedNeoValue = 500;
             if (!IcoShareSmartContract.SendContribution(icoShareId)) Assert.Fail();
 
-            ExecutionEngine.Sender = "987654".AsByteArray();
+            ExecutionEngine.Sender = "Ki1QRXjqeic2zRp8yAK2nJJpJr6o664CWJ".AsByteArray();
             ExecutionEngine.ConributedNeoValue = 1000;
             if (!IcoShareSmartContract.SendContribution(icoShareId)) Assert.Fail();
 
-            ExecutionEngine.Sender = "567891".AsByteArray();
+            ExecutionEngine.Sender = "JJpJr6o664CWJKi1QRXjqeic2zRp8yAK2n".AsByteArray();
             ExecutionEngine.ConributedNeoValue = 750;
             if (!IcoShareSmartContract.SendContribution(icoShareId)) Assert.Fail();
 
             ExecutionEngine.Sender = ExecutionEngine.ExecutingScriptHash;
             if (!IcoShareSmartContract.RefundUnsuccesfullIcoShare(icoShareId)) Assert.Fail();
 
-            var add1 = addresses.First(x => x.Item1 == "123123");
-            var add2 = addresses.First(x => x.Item1 == "987654");
-            var add3 = addresses.First(x => x.Item1 == "567891");
+            var add1 = addresses.First(x => x.Item1 == "AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y");
+            var add2 = addresses.First(x => x.Item1 == "Ki1QRXjqeic2zRp8yAK2nJJpJr6o664CWJ");
+            var add3 = addresses.First(x => x.Item1 == "JJpJr6o664CWJKi1QRXjqeic2zRp8yAK2n");
 
             Assert.IsTrue(add1 != null && add1.Item2 == 500);
             Assert.IsTrue(add2 != null && add2.Item2 == 1000);
